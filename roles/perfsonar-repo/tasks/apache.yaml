@@ -1,0 +1,31 @@
+---
+
+- name: Create html dir
+  ansible.builtin.file:
+    path: /var/www/html
+    state: directory
+    force: false
+    mode: 0755
+    owner: jenkins
+    group: jenkins
+  become: true
+
+- name: Push site deff
+  ansible.builtin.template:
+    src: site-repo_http.conf
+    dest: '/etc/apache2/sites-available/site-repo_http.conf'
+    mode: 0644
+    owner: root
+    group: root
+    # validate: apache2ctl -t
+  become: true
+  notify:
+    - Restart apache
+
+- name: Enable site
+  ansible.builtin.command: a2ensite
+    'site-repo_http'
+  become: true
+  changed_when: secrete_key_list.rc != 0
+  notify:
+    - Restart apache

@@ -1,0 +1,55 @@
+---
+- name: Load tasks users.yaml
+  ansible.builtin.include_tasks: users.yaml
+
+- name: Install required tools
+  ansible.builtin.package:
+    name:
+      - apache2
+      - reprepro
+      - rsync
+      - lvm2
+      - libtimedate-perl
+    state: present
+  become: true
+
+- name: Setup datavg
+  community.general.lvg:
+    vg: datavg
+    pvs: /dev/sdb
+    state: present
+  become: true
+
+- name: Setup /var/www
+  community.general.lvol:
+    vg: datavg
+    lv: var_www
+    # pvs:  /dev/sdb
+    size: 100%VG
+    # resizefs: yes
+    shrink: true
+  become: true
+
+- name: Format the volume with ext4 fs
+  community.general.filesystem:
+    fstype: ext4
+    dev: /dev/datavg/var_www
+  become: true
+
+- name: Mount the data filesystem
+  ansible.posix.mount:
+    path: /var/www
+    state: mounted
+    src: /dev/datavg/var_www
+    fstype: ext4
+    passno: 2
+  become: true
+
+- name: Include apache role
+  ansible.builtin.include_tasks: apache.yaml
+
+- name: Include rsynd role
+  ansible.builtin.include_tasks: rsyncd.yaml
+
+- name: Include Jenkins user role
+  ansible.builtin.include_tasks: jenkins.yaml

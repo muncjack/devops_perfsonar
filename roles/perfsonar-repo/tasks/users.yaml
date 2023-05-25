@@ -1,0 +1,63 @@
+---
+
+- name: Get users ssh keys from files
+  ansible.builtin.set_fact:
+    users_data: "{{ users_data | default({}) | combine({item | basename: lookup('file', item)}) }}"
+  with_fileglob: 'files/users/*'
+  become: true
+
+# - name: Debug
+#   Debug:
+#     var: users_data
+
+- name: Add a new user named provision
+  ansible.builtin.user:
+    name: "{{ item.key }}"
+    comment: "added by ansible"
+    shell: "/bin/bash"
+  with_dict: "{{ users_data }}"
+  become: true
+  no_log: true
+
+- name: Deploy users SSH Key
+  ansible.posix.authorized_key:
+    user: "{{ item.key }}"
+    key: "{{ item.value }}"
+    state: present
+  with_dict: "{{ users_data }}"
+  become: true
+  no_log: true
+
+- name: Add jenkins perl script
+  ansible.builtin.copy:
+    dest: /home/jenkins
+    src: deb-repo-info.pl
+    force: true
+    mode: 0555
+    owner: jenkins
+    group: jenkins
+  become: true
+
+- name: Disable Password Authentication
+  ansible.builtin.lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication'
+    line: "PasswordAuthentication no"
+    state: present
+    backup: true
+  become: true
+  no_log: true
+  notify:
+    - Restart sshd
+
+- name: Disable Root Login
+  ansible.builtin.lineinfile:
+    dest: '/etc/ssh/sshd_config'
+    regexp: '^PermitRootLogin'
+    line: "PermitRootLogin no"
+    state: present
+    backup: true
+  become: true
+  no_log: true
+  notify:
+    - Restart sshd

@@ -1,0 +1,9 @@
+[local]
+localhost
+
+[pxe]
+test-pxe01.geant.org
+uat-pxe01.geant.org
+
+[ps_repo]
+perfsonar-repo.geant.org

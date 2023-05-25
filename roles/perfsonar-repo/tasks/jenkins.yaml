@@ -1,0 +1,39 @@
+---
+
+- name: Check if gpg key is inplace
+  ansible.builtin.command:
+  args:
+    cmd: "gpg --batch --list-secret-keys"
+  become: true
+  become_user: jenkins
+  register: secrete_key_list
+  changed_when: secrete_key_list.rc != 0
+  no_log: true
+
+- name: Debug
+  ansible.builtin.debug:
+    var: secrete_key_list.stdout_lines  # .stderr_lines
+
+- name: Params 4 pass
+  ansible.builtin.set_fact:
+    pass_params: "returnall=true directory=./.password-store"
+
+- name: Install jenkins snapshot secret key
+  when: 'item.hash not in secrete_key_list.stdout'
+  ansible.builtin.command:
+  args:
+    cmd: "gpg --batch --import"
+    stdin: "{{ lookup('community.general.passwordstore', 'jenkins/gpg/{{ item.name }}.key {{ pass_params }}') }}"
+  become: true
+  become_user: jenkins
+  with_items:
+    - {name: 'snapshot', hash: '8968F5F6'}
+    - {name: 'production', hash: '9AFA4E0A'}
+  register: gpg_import
+  no_log: true
+
+# - name: Debug
+#   when: gpg_import is defined
+#   ansible.builtin.debug:
+#     var: items.stderr_lines
+#   with_items: "{{ gpg_import.results }}"

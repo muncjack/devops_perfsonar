@@ -1,0 +1,19 @@
+---
+
+- name: Restart rsync
+  ansible.builtin.service:
+    name: rsync
+    state: restarted
+  become: true
+
+- name: Restart apache
+  ansible.builtin.service:
+    name: apache2
+    state: restarted
+  become: true
+
+- name: Restart sshd
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+  become: true

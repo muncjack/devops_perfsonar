@@ -1,0 +1,31 @@
+---
+
+- name: Do some work here
+  ansible.builtin.debug:
+    msg: 'do some stuff here for rsync'
+
+- name: Install rsyncd config file
+  ansible.builtin.template:
+    src: rsyncd.conf
+    dest: /etc/rsyncd.conf
+    mode: 0644
+    owner: root
+    group: root
+  become: true
+  notify:
+    - Restart rsync
+
+- name: Enable rsync in the config defaults
+  ansible.builtin.lineinfile:
+    path: /etc/default/rsync
+    regexp: '^RSYNC_ENABLE=.*'
+    state: present
+    line: 'RSYNC_ENABLE=true'
+    backrefs: true
+    create: true
+    mode: 0644
+    owner: root
+    group: root
+  become: true
+  notify:
+    - Restart rsync
