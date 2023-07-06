@@ -17,3 +17,15 @@
     name: sshd
     state: restarted
   become: true
+
+- name: Systemd daemon-reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+  become: true
+
+- name: Goaccess restart
+  ansible.builtin.systemd:
+    enabled: true
+    name: goaccess
+    state: restarted
+  become: true

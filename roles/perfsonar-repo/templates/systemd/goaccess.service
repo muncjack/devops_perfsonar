@@ -1,0 +1,17 @@
+[Unit]
+Description=Goaccess Web log report.
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+Restart=always
+RuntimeDirectory=goaccess
+#ExecStart=/usr/bin/goaccess -a -g -f /var/log/nginx/access.log -o /srv/www/goaccess/index.html --real-time-html --ws-url <your url>
+ExecStart=/usr/bin/goaccess 
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=multi-user.target

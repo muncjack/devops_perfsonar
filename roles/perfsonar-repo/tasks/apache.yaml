@@ -5,27 +5,110 @@
     path: /var/www/html
     state: directory
     force: false
-    mode: 0755
+    mode: '0755'
     owner: jenkins
     group: jenkins
   become: true
 
+- name: Get list sites
+  ansible.builtin.shell: |
+    a2query -s | cut -f1 -d' '
+  changed_when: 1 == 1
+  register: list_sites
+
 - name: Push site deff
+  when: " item  not in list_sites.stdout_lines"
   ansible.builtin.template:
-    src: site-repo_http.conf
-    dest: '/etc/apache2/sites-available/site-repo_http.conf'
-    mode: 0644
+    src: "apache/site/{{ item }}.conf"
+    dest: "/etc/apache2/sites-available/{{ item }}.conf"
+    mode: '0644'
     owner: root
     group: root
     # validate: apache2ctl -t
   become: true
+  with_items:
+    - 'site-repo_http'
+    - 'site-repo_https'
+  register: sites
   notify:
     - Restart apache
 
 - name: Enable site
-  ansible.builtin.command: a2ensite
-    'site-repo_http'
+  when: " item  not in list_sites.stdout_lines"
+  ansible.builtin.command: "a2ensite {{ item }}"
   become: true
-  changed_when: secrete_key_list.rc != 0
+  with_items:
+    - 'site-repo_http'
+    - 'site-repo_https'
   notify:
     - Restart apache
+
+- name: Get list mods
+  ansible.builtin.shell: |
+    a2query -m | cut -f1 -d' '
+  changed_when: 1 == 1
+  register: list_mods
+
+- name: Enable module(s)
+  when: " item  not in list_mods.stdout_lines"
+  ansible.builtin.command: "a2enmod {{ item }}"
+  become: true
+  with_items:
+    - 'remoteip'
+    - 'proxy'
+    - 'proxy_http'
+    - 'proxy_wstunnel'
+#  notify:
+#    - Restart apache
+
+- name: Get list confs
+  ansible.builtin.shell: |
+    a2query -c | cut -f1 -d' '
+  changed_when: 1 == 1
+  register: list_confs
+
+- name: Push module conf
+  when: " item  not in list_confs.stdout_lines"
+  ansible.builtin.template:
+    src: "apache/conf/{{ item }}.conf"
+    dest: "/etc/apache2/conf-available/{{ item }}.conf"
+    mode: '0644'
+    owner: root
+    group: root
+    # validate: apache2ctl -t
+  become: true
+  with_items:
+    - 'remoteip'
+  notify:
+    - Restart apache
+
+- name: Enable conf(s)
+  when: " item  not in list_confs.stdout_lines"
+  ansible.builtin.command: "a2enconf {{ item }}"
+  become: true
+  with_items:
+    - 'remoteip'
+  notify:
+    - Restart apache
+
+- name: Push goaccess service conf
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: '0644'
+    owner: root
+    group: root
+  become: true
+  with_items:
+    - {'src': 'systemd/goaccess.service', 'dest': '/usr/lib/systemd/system/goaccess.service' }
+    - {'src': 'goaccess.conf', 'dest': '/etc/goaccess/goaccess.conf' }
+  notify:
+    - Systemd daemon-reload
+    - Goaccess restart
+
+# - name: Systemd start the service
+#   ansible.builtin.systemd:
+#     enabled: true
+#     name: goaccess
+#     state: started
+#   become: true

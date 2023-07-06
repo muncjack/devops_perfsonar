@@ -10,6 +10,7 @@
       - rsync
       - lvm2
       - libtimedate-perl
+      - goaccess
     state: present
   become: true
 
@@ -41,6 +42,31 @@
     path: /var/www
     state: mounted
     src: /dev/datavg/var_www
+    fstype: ext4
+    passno: 2
+  become: true
+
+- name: Setup /var/lib/goaccess
+  community.general.lvol:
+    vg: rootvg
+    lv: var_lib_goaccess
+    # pvs:  /dev/sdb
+    size: 1G
+    # resizefs: yes
+    shrink: true
+  become: true
+
+- name: Format the volume with ext4 fs
+  community.general.filesystem:
+    fstype: ext4
+    dev: /dev/rootvg/var_lib_goaccess
+  become: true
+
+- name: Mount the goaccess filesystem
+  ansible.posix.mount:
+    path: /var/lib/goaccess
+    state: mounted
+    src: /dev/rootvg/var_lib_goaccess
     fstype: ext4
     passno: 2
   become: true
