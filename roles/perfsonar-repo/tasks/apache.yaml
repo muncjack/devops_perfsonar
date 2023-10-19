@@ -11,13 +11,15 @@
   become: true
 
 - name: Get list sites
-  ansible.builtin.shell: |
-    a2query -s | cut -f1 -d' '
+  ansible.builtin.shell:
+  args:
+    executable: /usr/bin/bash
+    cmd: "set -o pipefail; a2query -s | cut -f1 -d' '"
   changed_when: 1 == 1
   register: list_sites
 
 - name: Push site deff
-  when: " item  not in list_sites.stdout_lines"
+  # when: " item  not in list_sites.stdout_lines"
   ansible.builtin.template:
     src: "apache/site/{{ item }}.conf"
     dest: "/etc/apache2/sites-available/{{ item }}.conf"
@@ -37,6 +39,7 @@
   when: " item  not in list_sites.stdout_lines"
   ansible.builtin.command: "a2ensite {{ item }}"
   become: true
+  changed_when: " item  not in list_sites.stdout_lines"
   with_items:
     - 'site-repo_http'
     - 'site-repo_https'
@@ -44,8 +47,10 @@
     - Restart apache
 
 - name: Get list mods
-  ansible.builtin.shell: |
-    a2query -m | cut -f1 -d' '
+  ansible.builtin.shell:
+  args:
+    executable: /usr/bin/bash
+    cmd: "set -o pipefail; a2query -m | cut -f1 -d' '"
   changed_when: 1 == 1
   register: list_mods
 
@@ -53,22 +58,25 @@
   when: " item  not in list_mods.stdout_lines"
   ansible.builtin.command: "a2enmod {{ item }}"
   become: true
+  changed_when: " item  not in list_mods.stdout_lines"
   with_items:
     - 'remoteip'
     - 'proxy'
     - 'proxy_http'
     - 'proxy_wstunnel'
-#  notify:
-#    - Restart apache
+  notify:
+    - Restart apache
 
 - name: Get list confs
-  ansible.builtin.shell: |
-    a2query -c | cut -f1 -d' '
+  ansible.builtin.shell:
+  args:
+    executable: /usr/bin/bash
+    cmd: "set -o pipefail; a2query -c | cut -f1 -d' '"
   changed_when: 1 == 1
   register: list_confs
 
 - name: Push module conf
-  when: " item  not in list_confs.stdout_lines"
+  # when: " item  not in list_confs.stdout_lines"
   ansible.builtin.template:
     src: "apache/conf/{{ item }}.conf"
     dest: "/etc/apache2/conf-available/{{ item }}.conf"
@@ -79,6 +87,7 @@
   become: true
   with_items:
     - 'remoteip'
+    - 'goaccess'
   notify:
     - Restart apache
 
@@ -86,8 +95,10 @@
   when: " item  not in list_confs.stdout_lines"
   ansible.builtin.command: "a2enconf {{ item }}"
   become: true
+  changed_when: " item  not in list_confs.stdout_lines"
   with_items:
     - 'remoteip'
+    - 'goaccess'
   notify:
     - Restart apache
 

@@ -7,6 +7,7 @@ Type=simple
 User=root
 Group=root
 Restart=always
+RuntimeMaxSec=6h
 RuntimeDirectory=goaccess
 #ExecStart=/usr/bin/goaccess -a -g -f /var/log/nginx/access.log -o /srv/www/goaccess/index.html --real-time-html --ws-url <your url>
 ExecStart=/usr/bin/goaccess 

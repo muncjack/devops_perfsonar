@@ -8,7 +8,7 @@
   ansible.builtin.template:
     src: rsyncd.conf
     dest: /etc/rsyncd.conf
-    mode: 0644
+    mode: "0644"
     owner: root
     group: root
   become: true
@@ -23,7 +23,7 @@
     line: 'RSYNC_ENABLE=true'
     backrefs: true
     create: true
-    mode: 0644
+    mode: "0644"
     owner: root
     group: root
   become: true

@@ -33,7 +33,7 @@
     dest: /home/jenkins
     src: deb-repo-info.pl
     force: true
-    mode: 0555
+    mode: "0555"
     owner: jenkins
     group: jenkins
   become: true
