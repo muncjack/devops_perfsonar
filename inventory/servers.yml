@@ -7,3 +7,9 @@ uat-pxe01.geant.org
 
 [ps_repo]
 perfsonar-repo.geant.org
+
+[ps_build]
+ps-build.geant.org
+
+[ps_build:vars]
+ansible_user = pete

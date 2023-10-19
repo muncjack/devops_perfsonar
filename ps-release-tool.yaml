@@ -1,0 +1,15 @@
+---
+- name: Perfsonar release tool
+  hosts:
+    - ps_build
+    - ps_repo
+  #become: true
+  #become_user: jenkins
+  vars:
+    - release: "5.2"
+    - build_repo_dir: '/var/local/pete_repo'
+    - repo_dir: '/var/www/pete_html/debian'
+    # - build_repo_dir: '/var/local/repo/'
+    # - repo_dir: '/var/www/html'
+  roles:
+    - ps_release_version

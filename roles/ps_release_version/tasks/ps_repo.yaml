@@ -1,0 +1,109 @@
+---
+- name: Repo check debian distributions
+  ansible.builtin.lineinfile:
+    state: absent
+    path: '{{ repo_dir }}/conf/distributions'
+    regexp: '{{ release }} release - staging packages'
+  check_mode: true
+  changed_when: false
+  register: check_dist
+
+- name: Repo update debian distributions
+  when: check_dist.found == 0
+  ansible.builtin.lineinfile:
+    state: present
+    path: '{{ repo_dir }}/conf/distributions'
+    regexp: '{{ release }} release - staging packages'
+    insertafter: "EOF"
+    line: |
+      Origin: perfSONAR
+      Label: perfsonar.net
+      Codename: perfsonar-{{ release }}-snapshot
+      Suite: perfsonar-minor-snapshot
+      Description: perfSONAR Debian repository for the {{ release }} release - snapshot packages
+      Architectures: amd64 armhf arm64 ppc64el source
+      Components: main
+      Tracking: minimal
+      SignWith: 8968F5F6
+      Update: d10-perfsonar-{{ release }}-snapshot
+      
+      Origin: perfSONAR
+      Label: perfsonar.net
+      Codename: perfsonar-{{ release }}-staging
+      Suite: perfsonar-minor-staging
+      AlsoAcceptFor: perfsonar-release
+      Description: perfSONAR Debian repository for the {{ release }} release - staging packages
+      Architectures: amd64 armhf arm64 ppc64el source
+      Components: main
+      Tracking: minimal
+      SignWith: 8968F5F6
+      Update: d10-perfsonar-{{ release }}-staging
+      
+  register: repo_dist
+
+
+- name: Repo check debian distributions
+  ansible.builtin.lineinfile:
+    state: absent
+    path: '{{ repo_dir }}/conf/updates'
+    regexp: 'Name: d10-perfsonar-{{ release }}-staging'
+  check_mode: true
+  changed_when: false
+  register: check_up
+
+- name: Repo update debian updates
+  when: check_up.found == 0
+  ansible.builtin.lineinfile:
+    state: present
+    path: '{{ repo_dir }}/conf/updates'
+    regexp: 'Name: d10-perfsonar-{{ release }}-staging'
+    insertafter: "EOF"
+    line: |
+      Name: d10-perfsonar-{{ release }}-snapshot
+      Method: http://perfsonar-repo.geant.org/repo-from-d10
+      Suite: perfsonar-{{ release }}-snapshot
+      VerifyRelease: 1C8650438968F5F6
+      
+      Name: d10-perfsonar-{{ release }}-staging
+      Method: http://perfsonar-repo.geant.org/repo-from-d10
+      Suite: perfsonar-{{ release }}-staging
+      VerifyRelease: 1C8650438968F5F6
+      
+  register: repo_up
+
+- name: Repo check debian distributions
+  ansible.builtin.lineinfile:
+    state: absent
+    path: '{{ repo_dir }}/conf/pulls'
+    regexp: 'Name: pull-perfsonar-{{ release }}-staging'
+  check_mode: true
+  changed_when: false
+  register: check_pull
+
+- name: Repo update debian pulls
+  when: check_pull.found == 0
+  ansible.builtin.lineinfile:
+    state: present
+    path: '{{ repo_dir }}/conf/pulls'
+    regexp: 'Name: pull-perfsonar-{{ release }}-staging'
+    insertafter: "EOF"
+    line: |
+      Name: pull-perfsonar-{{ release }}-staging
+      From: perfsonar-{{ release }}-staging
+      
+  register: repo_pull
+
+- name: Bebug
+  debug:
+    msg: "check_dist: {{ check_dist.changed }}, check_up: {{ check_up.changed }}, check_pull: {{ check_pull.changed }}"
+
+- name: Run reprepro export
+  when: check_dist.found == 0 or check_up.found == 0 or check_pull.found == 0
+  ansible.builtin.command: 
+    chdir: "{{ repo_dir }}"
+    cmd: reprepro export
+  register: repo_export
+
+- name: debug
+  ansible.builtin.debug:
+    var: repo_export  

@@ -1,0 +1,49 @@
+---
+- name: Build check debian distributions
+  ansible.builtin.lineinfile:
+    state: absent
+    path: '{{ build_repo_dir }}/conf/distributions'
+    regexp: '{{ release }} release - staging packages'
+  check_mode: true
+  changed_when: false
+  register: check
+
+- name: Build update debian distributions
+  when: check.found == 0
+  ansible.builtin.lineinfile:
+    state: present
+    path: '{{ build_repo_dir }}/conf/distributions'
+    regexp: '{{ release }} release - staging packages'
+    insertbefore: "BOF"
+    line: |
+      Origin: perfSONAR
+      Label: perfsonar.net
+      Codename: perfsonar-{{ release }}-staging
+      Description: perfSONAR Debian repository for the {{ release }} release - staging packages
+      Architectures: amd64 armhf arm64 ppc64el source
+      Components: main
+      Tracking: minimal
+      SignWith: 8968F5F6
+      AlsoAcceptFor: perfsonar-{{ release }} perfsonar-release perfsonar-minor-staging
+      
+      Origin: perfSONAR
+      Label: perfsonar.net
+      Codename: perfsonar-{{ release }}-snapshot
+      Description: perfSONAR Debian repository for the {{ release }} release - snapshot packages
+      Architectures: amd64 armhf arm64 ppc64el source
+      Components: main
+      Tracking: minimal
+      SignWith: 8968F5F6
+      AlsoAcceptFor: UNRELEASED
+      
+  register: mychange
+
+- name: Bebug
+  ansible.builtin.debug:
+    var: mychange
+
+- name: Run reprepro export
+  when: check.found == 0
+  ansible.builtin.command: 
+    chdir: "{{ build_repo_dir }}"
+    cmd: reprepro export

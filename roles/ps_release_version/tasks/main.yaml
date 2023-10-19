@@ -1,0 +1,8 @@
+---
+- name: Do work on ps build host
+  when: "'ps_build' in group_names"
+  ansible.builtin.include_tasks: ps_build.yaml
+
+- name: do work on ps repo host(s)
+  when: "'ps_repo' in group_names"
+  ansible.builtin.include_tasks: ps_repo.yaml
