@@ -94,16 +94,16 @@
   register: repo_pull
 
 - name: Bebug
-  debug:
+  ansible.builtin.debug:
     msg: "check_dist: {{ check_dist.changed }}, check_up: {{ check_up.changed }}, check_pull: {{ check_pull.changed }}"
 
 - name: Run reprepro export
   when: check_dist.found == 0 or check_up.found == 0 or check_pull.found == 0
-  ansible.builtin.command: 
+  ansible.builtin.command:
     chdir: "{{ repo_dir }}"
     cmd: reprepro export
   register: repo_export
 
-- name: debug
+- name: Debug
   ansible.builtin.debug:
-    var: repo_export  
+    var: repo_export

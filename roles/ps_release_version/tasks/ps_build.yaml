@@ -44,6 +44,6 @@
 
 - name: Run reprepro export
   when: check.found == 0
-  ansible.builtin.command: 
+  ansible.builtin.command:
     chdir: "{{ build_repo_dir }}"
     cmd: reprepro export
