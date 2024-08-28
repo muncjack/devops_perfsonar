@@ -1,0 +1,15 @@
+# List of all distributions present in our repository
+# Codename: needs to be before the Suite: and Architectures: fields.
+
+{% for i in config_array %}
+{% for key in i.keys() %}
+{{ key }}: {{ i[key] }}
+{% endfor %}
+
+{% endfor %}
+{% for i in new_section %}
+{% for key in i.keys() %}
+{{ key }}: {{ i[key] }}
+{% endfor %}
+
+{% endfor %}

@@ -1,0 +1,44 @@
+---
+- name: Base vars for filtering
+  ansible.builtin.set_fact:
+    # this is so we can define a limit to the number of section in the config file
+    linit_count: "{{ section_count|default(0) }}"
+- name: read file from server
+  ansible.builtin.slurp:
+    src: '{{ conf_file }}'
+  register: remote_file
+
+# this mind blowing jinga will create a array of dict's whit the content of the file
+- name: Convert text to array of dict in text
+  ansible.builtin.set_fact:
+    config_text: >-
+      {% set blocks = remote_file.content | b64decode |split('\n\n') %}
+      {% set distributions = [] %}
+      {% for block in blocks[1::] %}
+        {% set dist = {} %}
+        {% for line in block.splitlines() %}
+          {% set kv = line.split(':', 1) %}
+          {% if kv|length == 2 %}
+            {% set key = kv[0].strip() %}
+            {% set value = kv[1].strip() %}
+            {% set _ = dist.update({key: value}) %}
+          {% endif %}
+        {% endfor %}
+        {% set _ = distributions.append(dist) %}
+      {% endfor %}
+      {{distributions}}
+    
+- name: Convert and strip text so ansible will process it as a array od dicts
+  ansible.builtin.set_fact:
+    config_array: "{{ config_text.strip() }}"
+
+    
+- name: Generate file from array of dict's vi template
+  # when: " '{{ release }}' not in '{{ config_text }}' "
+  # only recreate file if release does not exist already
+  when: not(config_text.find(release) != -1)
+  ansible.builtin.template:
+    src: distributions.j2
+    # dest: '{{ repo_dir }}/conf/distributions.new'
+    dest: "{{ conf_file }}"
+    mode: '0644'
