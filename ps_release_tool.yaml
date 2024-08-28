@@ -1,0 +1,26 @@
+---
+- name: Perfsonar release tool
+  hosts:
+    - ps_build
+    - ps_repo
+  # become: true
+  # become_user: jenkins
+  vars_prompt:
+    - name: release
+      #when: release is not defined
+      prompt: "Please enter the provided the release number"
+      private: false
+  # pre_tasks:
+  #   - name: Checking release format
+  #     fail: checking release format
+  #     #  msg: "release format is digit.digit" 
+  #     when: release == '' 
+  #     #when: release.regex_search('\d+\.\d+') == release 
+  vars:
+    # release: "5.2"
+    build_repo_dir: '/var/local/pete_repo'
+    repo_dir: '/var/www/pete_html/debian'
+    # - build_repo_dir: '/var/local/repo/'
+    # - repo_dir: '/var/www/html'
+  roles:
+    - ps_release_version

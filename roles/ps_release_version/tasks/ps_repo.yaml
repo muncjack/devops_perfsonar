@@ -1,109 +1,109 @@
 ---
-- name: Repo check debian distributions
-  ansible.builtin.lineinfile:
-    state: absent
-    path: '{{ repo_dir }}/conf/distributions'
-    regexp: '{{ release }} release - staging packages'
-  check_mode: true
-  changed_when: false
-  register: check_dist
+# some base templates for the different config files 
+# --------------------------------------------------
+- name: template setup
+  ansible.builtin.set_fact:
+    mode: ["snapshot", "staging"]
+    sign_key:
+      snapshot: "8968F5F6"
+      staging: "8968F5F6"
+    distributions_tpl:
+      Origin: "perfSONAR"
+      Label: "perfsonar.net"
+      Codename: "perfsonar-{{ release }}-__mode__"
+      Suite: "perfsonar-minor-__mode__"
+      Description: "perfSONAR Debian repository for the {{ release }} release - __mode__ packages"
+      Architectures: "amd64 armhf arm64 ppc64el source"
+      Components: "main"
+      Tracking: "minimal"
+      SignWith: "__signKey__"
+      Update: "d10-perfsonar-{{ release }}-__mode__"
+    update_keys:
+      snapshot: "1C8650438968F5F6"
+      staging: "1C8650438968F5F6"
+    update_tpl:
+      Name: "d10-perfsonar-{{ release }}-__mode__"
+      Method: "http://perfsonar-repo.geant.org/repo-from-d10"
+      Suite: "perfsonar-{{ release }}-__mode__"
+      VerifyRelease: "__gpgkey__"
+    pulls_tpl:
+      Name: "pull-perfsonar-{{ release }}-staging"
+      From: "perfsonar-{{ release }}-staging"
 
-- name: Repo update debian distributions
-  when: check_dist.found == 0
-  ansible.builtin.lineinfile:
-    state: present
-    path: '{{ repo_dir }}/conf/distributions'
-    regexp: '{{ release }} release - staging packages'
-    insertafter: "EOF"
-    line: |
-      Origin: perfSONAR
-      Label: perfsonar.net
-      Codename: perfsonar-{{ release }}-snapshot
-      Suite: perfsonar-minor-snapshot
-      Description: perfSONAR Debian repository for the {{ release }} release - snapshot packages
-      Architectures: amd64 armhf arm64 ppc64el source
-      Components: main
-      Tracking: minimal
-      SignWith: 8968F5F6
-      Update: d10-perfsonar-{{ release }}-snapshot
-      
-      Origin: perfSONAR
-      Label: perfsonar.net
-      Codename: perfsonar-{{ release }}-staging
-      Suite: perfsonar-minor-staging
-      AlsoAcceptFor: perfsonar-release
-      Description: perfSONAR Debian repository for the {{ release }} release - staging packages
-      Architectures: amd64 armhf arm64 ppc64el source
-      Components: main
-      Tracking: minimal
-      SignWith: 8968F5F6
-      Update: d10-perfsonar-{{ release }}-staging
-      
-  register: repo_dist
+# create new items n jinga to append for the distributions file
+# ------------------------------------------------------------
+- name: template setup for distributions
+  ansible.builtin.set_fact:
+    phase_one: >-
+      {% set result = [] %}{% for m in mode %}{% set dist = {} %}{% for k in distributions_tpl.keys() %}
+      {% set _ = dist.update({k: distributions_tpl[k] | replace('__mode__', m)|replace('__signKey__', sign_key[m]) }) %}
+      {% endfor %}{% set _ = result.append(dist) %}{% endfor %}{{ result}}
+# convert new text into to array of dicts
+- name: template setup for distributions
+  ansible.builtin.set_fact:
+    phase_two: "{{ phase_one.strip() }}"
+- name: Debug phase_two for distributions
+  debug:
+    msg: "{{ phase_two| type_debug }}"
+- name: Debug phase_two for distributions
+  debug:
+    var: phase_two
+# call the config file write task
+- name: Do work on ps repo host for distributions
+  when: "'ps_repo' in group_names"
+  ansible.builtin.include_tasks: repo_edit.yaml
+  vars:
+    conf_file: '{{ repo_dir }}/conf/distributions'
+    new_section: "{{ phase_two }}"
 
+# create new items in jinga to append for the updates file
+# ------------------------------------------------------------
+- name: template setup for update
+  ansible.builtin.set_fact:
+    phase_one: >-
+      {% set result = [] %}{% for m in mode %}{% set dist = {} %}{% for k in update_tpl.keys() %}
+      {% set _ = dist.update({k: update_tpl[k] | replace('__mode__', m)|replace('__gpgkey__', update_keys[m]) }) %}
+      {% endfor %}{% set _ = result.append(dist) %}{% endfor %}{{ result}}
+# convert new text into to array of dicts
+- name: template setup for update
+  ansible.builtin.set_fact:
+    phase_two: "{{ phase_one.strip() }}"
+- name: Debug phase_two for update
+  debug:
+    msg: "{{ phase_two| type_debug }}"
+- name: Debug phase_two for update
+  debug:
+    var: phase_two
+# call the config file write task
+- name: Do work on ps repo host for update
+  when: "'ps_repo' in group_names"
+  ansible.builtin.include_tasks: repo_edit.yaml
+  vars:
+    conf_file: '{{ repo_dir }}/conf/updates'
+    new_section: "{{ phase_two }}"
 
-- name: Repo check debian distributions
-  ansible.builtin.lineinfile:
-    state: absent
-    path: '{{ repo_dir }}/conf/updates'
-    regexp: 'Name: d10-perfsonar-{{ release }}-staging'
-  check_mode: true
-  changed_when: false
-  register: check_up
-
-- name: Repo update debian updates
-  when: check_up.found == 0
-  ansible.builtin.lineinfile:
-    state: present
-    path: '{{ repo_dir }}/conf/updates'
-    regexp: 'Name: d10-perfsonar-{{ release }}-staging'
-    insertafter: "EOF"
-    line: |
-      Name: d10-perfsonar-{{ release }}-snapshot
-      Method: http://perfsonar-repo.geant.org/repo-from-d10
-      Suite: perfsonar-{{ release }}-snapshot
-      VerifyRelease: 1C8650438968F5F6
-      
-      Name: d10-perfsonar-{{ release }}-staging
-      Method: http://perfsonar-repo.geant.org/repo-from-d10
-      Suite: perfsonar-{{ release }}-staging
-      VerifyRelease: 1C8650438968F5F6
-      
-  register: repo_up
-
-- name: Repo check debian distributions
-  ansible.builtin.lineinfile:
-    state: absent
-    path: '{{ repo_dir }}/conf/pulls'
-    regexp: 'Name: pull-perfsonar-{{ release }}-staging'
-  check_mode: true
-  changed_when: false
-  register: check_pull
-
-- name: Repo update debian pulls
-  when: check_pull.found == 0
-  ansible.builtin.lineinfile:
-    state: present
-    path: '{{ repo_dir }}/conf/pulls'
-    regexp: 'Name: pull-perfsonar-{{ release }}-staging'
-    insertafter: "EOF"
-    line: |
-      Name: pull-perfsonar-{{ release }}-staging
-      From: perfsonar-{{ release }}-staging
-      
-  register: repo_pull
-
-- name: Bebug
-  ansible.builtin.debug:
-    msg: "check_dist: {{ check_dist.changed }}, check_up: {{ check_up.changed }}, check_pull: {{ check_pull.changed }}"
-
-- name: Run reprepro export
-  when: check_dist.found == 0 or check_up.found == 0 or check_pull.found == 0
-  ansible.builtin.command:
-    chdir: "{{ repo_dir }}"
-    cmd: reprepro export
-  register: repo_export
-
-- name: Debug
-  ansible.builtin.debug:
-    var: repo_export
+# create new items in jinga to append for the pulls file
+# ------------------------------------------------------------
+- name: template setup for pulls
+  ansible.builtin.set_fact:
+    phase_one: >-
+      {% set result = [] %}{% for m in mode %}{% set dist = {} %}{% for k in pulls_tpl.keys() %}
+      {% set _ = dist.update({k: pulls_tpl[k] | replace('__mode__', m) }) %}
+      {% endfor %}{% set _ = result.append(dist) %}{% endfor %}{{ result}}
+# convert new text into to array of dicts
+- name: template setup for pulls
+  ansible.builtin.set_fact:
+    phase_two: "{{ phase_one.strip() }}"
+- name: Debug phase_two for pulls
+  debug:
+    msg: "{{ phase_two| type_debug }}"
+- name: Debug phase_two for pulls
+  debug:
+    var: phase_two
+# call the config file write task
+- name: Do work on ps repo host for pulls
+  when: "'ps_repo' in group_names"
+  ansible.builtin.include_tasks: repo_edit.yaml
+  vars:
+    conf_file: '{{ repo_dir }}/conf/pulls'
+    new_section: "{{ phase_two }}"
