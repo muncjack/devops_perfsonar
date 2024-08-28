@@ -1,0 +1,5 @@
+# perfSONAR {{ release }} staging repository
+# Repository key is available at https://downloads.perfsonar.net/debian/perfsonar-staging.gpg.key
+# curl -s -o /etc/apt/trusted.gpg.d/perfsonar-staging.gpg.asc https://downloads.perfsonar.net/debian/perfsonar-staging.gpg.key
+deb https://downloads.perfsonar.net/debian/ perfsonar-{{ release }}-staging main
+deb-src https://downloads.perfsonar.net/debian/ perfsonar-{{ release }}-staging main

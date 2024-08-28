@@ -1,0 +1,12 @@
+---
+- name: perfSONAR main repo server config
+  hosts: ps_repo
+  roles:
+    - perfsonar-repo
+  tags: 'provisioning'
+
+- name: Add new release to repository
+  hosts: ps_repos_hosts
+  roles:
+    - ps_release_version
+  tags: 'release'

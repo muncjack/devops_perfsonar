@@ -1,5 +1,0 @@
----
-- name: Perfsonar repo server config
-  hosts: ps_repo
-  roles:
-    - perfsonar-repo

@@ -1,0 +1,5 @@
+# perfSONAR {{ release }} snapshot repository
+# Repository key is available at https://downloads.perfsonar.net/debian/perfsonar-snapshot.gpg.key
+# curl -s -o /etc/apt/trusted.gpg.d/perfsonar-snapshot.gpg.asc https://downloads.perfsonar.net/debian/perfsonar-snapshot.gpg.key
+deb https://downloads.perfsonar.net/debian/ perfsonar-{{ release }}-snapshot main
+deb-src https://downloads.perfsonar.net/debian/ perfsonar-{{ release }}-snapshot main

@@ -1,4 +1,24 @@
 ---
+- name: Add APT list files
+  ansible.builtin.template:
+    src: 'files/{{ item.src }}'
+    dest: '{{ repo_dir }}/{{ item.dest }}'
+    mode: 0644
+  loop: 
+    - { src: perfsonar-x.y.list, dest: 'perfsonar-{{ release }}.list' }
+    - { src: perfsonar-x.y-snapshot.list, dest: 'perfsonar-{{ release }}-snapshot.list' }
+    - { src: perfsonar-x.y-staging.list, dest: 'perfsonar-{{ release }}-staging.list' }
+
+- name: Create symlinks
+  ansible.builtin.file:
+    src: '{{ repo_dir }}/{{ item.src }}'
+    dest: '{{ repo_dir }}/{{ item.dest }}'
+    state: link
+  loop: 
+    - { dest: 'perfsonar-{{ release }}.gpg.key', src: 'perfsonar-official.gpg.key' }
+    - { dest: 'perfsonar-{{ release }}-snapshot.gpg.key', src: 'perfsonar-snapshot.gpg.key' }
+    - { dest: 'perfsonar-{{ release }}-staging.gpg.key', src: 'perfsonar-staging.gpg.key' }
+
 - name: Repo check debian distributions
   ansible.builtin.lineinfile:
     state: absent
@@ -42,7 +62,7 @@
   register: repo_dist
 
 
-- name: Repo check debian distributions
+- name: Repo check debian updates
   ansible.builtin.lineinfile:
     state: absent
     path: '{{ repo_dir }}/conf/updates'
@@ -71,7 +91,7 @@
       
   register: repo_up
 
-- name: Repo check debian distributions
+- name: Repo check debian pulls
   ansible.builtin.lineinfile:
     state: absent
     path: '{{ repo_dir }}/conf/pulls'
@@ -93,7 +113,7 @@
       
   register: repo_pull
 
-- name: Bebug
+- name: Debug
   ansible.builtin.debug:
     msg: "check_dist: {{ check_dist.changed }}, check_up: {{ check_up.changed }}, check_pull: {{ check_pull.changed }}"
 
@@ -103,6 +123,10 @@
     chdir: "{{ repo_dir }}"
     cmd: reprepro export
   register: repo_export
+
+- name: Update HTML page
+  ansible.builtin.command:
+    cmd: ~/deb-repo-info.pl -repo '{{ repo_dir }}' -html > '{{ repo_dir }}'/index.html
 
 - name: Debug
   ansible.builtin.debug:

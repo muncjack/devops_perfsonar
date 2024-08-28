@@ -5,11 +5,18 @@ localhost
 test-pxe01.geant.org
 uat-pxe01.geant.org
 
+[all:vars]
+ansible_user=jenkins
+build_repo_dir = /var/local/repo
+repo_dir = /var/www/html/debian
+release = 5.2
+
 [ps_repo]
 perfsonar-repo.geant.org
 
 [ps_build]
 ps-build.geant.org
 
-[ps_build:vars]
-ansible_user = pete
+[ps_repos_hosts:children]
+ps_repo
+ps_build

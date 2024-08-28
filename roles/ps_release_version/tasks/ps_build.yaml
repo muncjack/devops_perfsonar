@@ -38,7 +38,7 @@
       
   register: mychange
 
-- name: Bebug
+- name: Debug
   ansible.builtin.debug:
     var: mychange
 
