@@ -28,7 +28,7 @@
   changed_when: false
   register: check_dist
 
-- name: Repo update debian distributions
+- name: Repo add {{ release }} to debian distributions
   when: check_dist.found == 0
   ansible.builtin.lineinfile:
     state: present
@@ -61,6 +61,18 @@
       
   register: repo_dist
 
+- name: Repo remove previous perfsonar-patch from debian distributions
+  ansible.builtin.replace:
+    path: '{{ repo_dir }}/conf/distributions'
+    before: 'Codename: perfsonar-{{ release }}-snapshot'
+    regexp: '^(Suite: perfsonar-patch-s.+)[\n|\r|\t|\s]'
+
+- name: Repo rename previous perfsonar-minor to patch in debian distributions
+  ansible.builtin.replace:
+    path: '{{ repo_dir }}/conf/distributions'
+    before: 'Codename: perfsonar-{{ release }}-snapshot'
+    regexp: '^(Suite: perfsonar)-minor-(s.+)$'
+    replace: '\1-patch-\2'
 
 - name: Repo check debian updates
   ansible.builtin.lineinfile:

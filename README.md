@@ -6,3 +6,5 @@ To add a release, change the release variable in the inventory, then run:
 
 After that, the Jenkins setup still need to be double checked and the new version added there.
 And the new release needs to be added to this script: debian-docker-buildmachines/deb-repo/staging-repo-publish.sh
+
+TODO: Add management of perfsonar-release.

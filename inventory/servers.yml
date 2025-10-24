@@ -9,7 +9,7 @@ uat-pxe01.geant.org
 ansible_user=jenkins
 build_repo_dir = /var/local/repo
 repo_dir = /var/www/html/debian
-release = 5.2
+release = 5.3
 
 [ps_repo]
 perfsonar-repo.geant.org
